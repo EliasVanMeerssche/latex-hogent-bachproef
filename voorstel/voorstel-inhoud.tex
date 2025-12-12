@@ -14,71 +14,63 @@
 
 \section{Inleiding}%
 \label{sec:inleiding}
+De kernel zit in het centrum van het besturingssysteem, en beheert een aantal uiterst belangrijke taken in het systeem, zoals het aansturen van geheugen, processen, hardware en software. De kernel wordt ook als eerste gestart wanneer het besturingssysteem opstart, en vanuit de kernel wordt het hele systeem aangestuurd. Een rootkit is een soort malware die de aanvaller volledige controle geeft over het systeem, in het bijzonder wanneer ze uitgevoerd wordt op de kernel - door een kwetsbaarheid in het netwerk of de lokale computer. De kernel regelt alles waardoor de software die van de kernel gebruikt maakt op zijn beurt ook onbetrouwbaar wordt. Omdat een kernel toolkit zo diep in het besturingssysteem zit, is het zeer moeilijk om deze te detecteren. 
 
-Waarover zal je bachelorproef gaan? Introduceer het thema en zorg dat volgende zaken zeker duidelijk aanwezig zijn:
+Het is niet eenvoudig om corruptie van een kernel te demonstreren tijdens de les Cybersecurity in de hogeschool opleiding Toegepaste Informatica. De lesgever, meneer Clauwaert, wil dat studenten die zich verdiepen in cybersecurity aanleren hoe ze een aangetast systeem kunnen herkennen en de schade van een rootkit kunnen beperken. Om dit mogelijk te maken moet er een kernel module worden geschreven die als doel heeft om een bestand of een proces te verbergen in het besturingssysteem. Dit moet gebeuren zodat de gebruiker op geen enkele manier op de hoogte is van het bestand of proces.
+De lesgever heeft voor één bepaalde versie van een linux distributie een kernel rootkit nodig die kan worden gebruikt tijdens een lab oefening of een troubleshooting test. Het verborgen bestand of proces zal door de studenten gevonden moeten worden tijdens de oefening.
 
-\begin{itemize}
-  \item kaderen thema
-  \item de doelgroep
-  \item de probleemstelling en (centrale) onderzoeksvraag
-  \item de onderzoeksdoelstelling
-\end{itemize}
+Het doel van de bachelorproef is om de kernel module correct te implementeren, te compileren en succesvol in te laden in het systeem.
 
-Denk er aan: een typische bachelorproef is \textit{toegepast onderzoek}, wat betekent dat je start vanuit een concrete probleemsituatie in bedrijfscontext, een \textbf{casus}. Het is belangrijk om je onderwerp goed af te bakenen: je gaat voor die \textit{ene specifieke probleemsituatie} op zoek naar een goede oplossing, op basis van de huidige kennis in het vakgebied.
-
-De doelgroep moet ook concreet en duidelijk zijn, dus geen algemene of vaag gedefinieerde groepen zoals \emph{bedrijven}, \emph{developers}, \emph{Vlamingen}, enz. Je richt je in elk geval op it-professionals, een bachelorproef is geen populariserende tekst. Eén specifiek bedrijf (die te maken hebben met een concrete probleemsituatie) is dus beter dan \emph{bedrijven} in het algemeen.
-
-Formuleer duidelijk de onderzoeksvraag! De begeleiders lezen nog steeds te veel voorstellen waarin we geen onderzoeksvraag terugvinden.
-
-Schrijf ook iets over de doelstelling. Wat zie je als het concrete eindresultaat van je onderzoek, naast de uitgeschreven scriptie? Is het een proof-of-concept, een rapport met aanbevelingen, \ldots Met welk eindresultaat kan je je bachelorproef als een succes beschouwen?
 
 %---------- Stand van zaken ---------------------------------------------------
 
 \section{Literatuurstudie}%
 \label{sec:literatuurstudie}
 
-Hier beschrijf je de \emph{state-of-the-art} rondom je gekozen onderzoeksdomein, d.w.z.\ een inleidende, doorlopende tekst over het onderzoeksdomein van je bachelorproef. Je steunt daarbij heel sterk op de professionele \emph{vakliteratuur}, en niet zozeer op populariserende teksten voor een breed publiek. Wat is de huidige stand van zaken in dit domein, en wat zijn nog eventuele open vragen (die misschien de aanleiding waren tot je onderzoeksvraag!)?
+Voor het ontwikkelen van moderne rootkits is diepgaande kennis vereist van de beveiligingsmechanismen in het opstartproces en de onderlinge communicatie tussen de componenten binnen een Linux-omgeving. Dit wordt onderzocht in het eerste deel van de literatuurstudie. 
+Het beveiligen van het opstartproces van een computer met Linux besturingssoftware maakt gebruik van secure boot chains. Dit principe werkt op volgende wijze: de UEFI-firmware (staat voor Unified Extensible Firmware Interface) bevat standaard de publieke sleutels van Microsoft (Microsoft CA) en vertrouwt daarom binaire bestanden die door Microsoft zijn ondertekend. Dit vertegenwoordigt het ‘vertrouwd’ onderdeel van de chain (dit noemt secure boot). 
+In dit onderdeel staat ook de ‘Machine Owner Key Enrollment’ of MOK, die het mogelijk maakt om eigen componenten toe te voegen aan de Secure Boot chain. Hierbij wordt gebruik gemaakt van eigen sleutels om aanpassingen als legitiem aan te duiden. Hierna wordt Shim ingeladen, dit is een pre-bootloader die de schakel vormt tussen UEFI en GRUB2 (de eigenlijke bootloader). Omdat GRUB2 niet gecertificeerd is door Microsoft, is er een extra schakel nodig in de Secure Boot chain. Shim zorgt ervoor dat de secure boot chain niet gebroken wordt\autocite{lee2025bootkitty}.
+In \textcite{lee2025bootkitty} wordt beschreven hoe BootKitty gebruik maakt van verschillende CVE's om de Secure Boot-keten te doorbreken en een eigen MOK toe te voegen. Hierdoor wordt Shim misleid om de aanpassing als legitiem te valideren.
+De aanval begint met een ‘privilege escalation’. Door specifieke kwetsbaarheden (CVE's) uit te buiten verkrijgen de aanvallers root-rechten. Vervolgens zetten ze een exploit in die gedownload is en geëxecuteerd om de UEFI-beveiliging zelf te omzeilen en hun bootkit. Als laatste stap forceren ze een eigen sleutel in de MOK-lijst. Hierdoor wordt het systeem misleid: Shim detecteert de toegevoegde MOK, vertrouwt de handtekening, en valideert de kwaadaardige bootkit als legitieme software.
 
-Je mag de titel van deze sectie ook aanpassen (literatuurstudie, stand van zaken, enz.). Zijn er al gelijkaardige onderzoeken gevoerd? Wat concluderen ze? Wat is het verschil met jouw onderzoek?
+In het tweede deel van de literatuurstudie wordt onderzocht hoe rootkits worden gemaakt en welke soorten rootkits er bestaan. Wat meteen opvalt is dat de meeste bronnen over rootkits geschreven zijn over de detectie ervan. Slechts weinig onderzoeken gaan over het schrijven van rootkits. Omdat het over schadelijke software gaat is het uiteraard logisch dat er niet veel bronnen bestaan. Er zijn echter wel een aantal dissertaties en artikels te vinden die rootkits classificeren en de verschillende soorten beschrijven\autocite{lacombe2008rootkit}. Er zijn in github ook een aantal lijsten van bestaande rootkits te vinden \autocite{skyw4tch3rRootkitsList} en \autocite{nagy2025detecting}. 
+Tenslotte worden in dit deel de verschillende methodes bekeken die kunnen worden gebruikt om de rootkits te verstoppen. Volgens \textcite{nagy2025detecting} zijn er drie manieren om in te laden en twee manieren om de kernel module te verstoppen. Deze worden hieronder beschreven. De eerste methode is de ‘Loadable kernel module’ die normaal gebruikt wordt voor het inladen van drivers. Drivers kunnen op deze manier eenvoudig toegevoegd worden wanneer dit nodig is tijdens het systeem aan staat. Deze methode kan ook worden gebruikt voor het inladen van rootkits. Na het inladen probeert de module zichzelf te verstoppen om detectie te voorkomen.
+De tweede methode is Return-oriented programming (ROP), dit kan gebeuren wanneer de aanvaller een  memory corruption vulnerability vindt. 
+De derde methode is Extended Berkeley Packet Filter, waarbij het mogelijk is om bytecode te injecteren in de kernel memory. Dit lijkt op de bovenstaande methodes maar dan zonder kernel module.
+Function hooking tenslotte is een methode om detectie te omzeilen. Als de rootkit ingeladen is, heeft het macht over de originele functies van de kernel. Dit zorgt ervoor dat het deze functies kan overschrijven. Het kan de locatie specifieke bestanden obfusceren waardoor het detectie kan omzeilen. Direct Kernel Object Manipulation is een andere techniek om te verbergen dat een kwaadaardige module is ingeladen. Deze methode past de kernel memory aan waardoor het de locatie van bestanden zoals de kernel module kan verwijderen.
 
-Verwijs bij elke introductie van een term of bewering over het domein naar de vakliteratuur, bijvoorbeeld~\autocite{Hykes2013}! Denk zeker goed na welke werken je refereert en waarom.
-
-Draag zorg voor correcte literatuurverwijzingen! Een bronvermelding hoort thuis \emph{binnen} de zin waar je je op die bron baseert, dus niet er buiten! Maak meteen een verwijzing als je gebruik maakt van een bron. Doe dit dus \emph{niet} aan het einde van een lange paragraaf. Baseer nooit teveel aansluitende tekst op eenzelfde bron.
-
-Als je informatie over bronnen verzamelt in JabRef, zorg er dan voor dat alle nodige info aanwezig is om de bron terug te vinden (zoals uitvoerig besproken in de lessen Research Methods).
-
-% Voor literatuurverwijzingen zijn er twee belangrijke commando's:
-% \autocite{KEY} => (Auteur, jaartal) Gebruik dit als de naam van de auteur
-%   geen onderdeel is van de zin.
-% \textcite{KEY} => Auteur (jaartal)  Gebruik dit als de auteursnaam wel een
-%   functie heeft in de zin (bv. ``Uit onderzoek door Doll & Hill (1954) bleek
-%   ...'')
-
-Je mag deze sectie nog verder onderverdelen in subsecties als dit de structuur van de tekst kan verduidelijken.
+In het derde deel van de literatuurstudie wordt bekeken welke methoden beschikbaar zijn voor het manueel of automatisch inladen van rootkits en worden de verschillende exploits bekeken die gebruikt kunnen worden om de module in te laden. 
+Er bestaan verschillende beveiligingsmechanismen in de Linux-kernel om kernel-exploits tegen te gaan. Dit wordt beschreven in \textcite{takaronis2024linux} en \textcite{LKMPwnPart1}. Het eerste is SMEP (Supervisor Mode Execution Prevention). Dit voorkomt dat een aanvaller die een kernel exploit heeft uitgevoerd en macht heeft gekregen over de RIP (Register Instruction Pointer) dit kan gebruiken om de pointer te verwijzen naar een eigen stuk code. SMEP zorgt ervoor dat alles in de userland niet uitgevoerd mag worden. De RIP is een CPU-register met het geheugenadres van de volgende instructie. Als iemand dit overneemt kan men de instructie geven om zijn eigen script uit te voeren.
+Het tweede beveiligingsmechanisme is SMAP (Supervisor Mode Access Prevention). Dit zorgt ervoor dat geheugen van userland niet mag beschreven of gelezen mag worden. Deze beveiliging bestaat omdat aanvallers gebruik maken van  ROP-gadgets. Deze bevatten stack-pointers die verwezen kunnen worden naar wat de aanvaller beheerst. De aanvaller plaatst dit dan in de Userspace-geheugen, SMAP voorkomt dan dat de kernel kan lezen of uitvoeren. 
+KASLR (Kernel address space layout randomization) is een derde beveiligingsmechanisme dat ervoor zorgt dat de geheugenlocaties van de kernel random bepaald worden bij het booten van het systeem. 
+Tenslotte zorgt KPTI (Kernel Page-Table Isolation) ervoor dat de Page Tables verdeeld zijn over user page tables en kernel page tables. De verschillende beveiligingsmechanismen zullen omzeild moeten worden door de exploits.  
 
 %---------- Methodologie ------------------------------------------------------
 \section{Methodologie}%
 \label{sec:methodologie}
 
-Hier beschrijf je hoe je van plan bent het onderzoek te voeren. Welke onderzoekstechniek ga je toepassen om elk van je onderzoeksvragen te beantwoorden? Gebruik je hiervoor literatuurstudie, interviews met belanghebbenden (bv.~voor requirements-analyse), experimenten, simulaties, vergelijkende studie, risico-analyse, PoC, \ldots?
+\subsection{Fase 1 Literatuurstudie}
+Tijdens de eerste fase wordt een literatuurstudie opgesteld. Er wordt gekeken naar gedetailleerde publicaties over Linux beveiligingsmechanismen en de verschillende methodes waarop deze mechanismen kunnen worden omzeild. Bronnen over dit onderwerp zijn moeilijk te vinden vanwege het risico dat het vrijgeven van de broncode met zich meebrengt. Deze fase wordt ook gebuikt om kennis over kernel toolkits te verzamelen en expertise op te bouwen. Het is belangrijk om zo veel mogelijk bronnen te vinden over de actuele staat van rootkits en hoe aanvallers hier gebruik van maken. Naast wetenschappelijke literatuur moet er ook gekeken worden naar minder formele bronnen van informatie over het onderwerp, zoals online platformen als Github, video's over het onderwerp en blogs.  
 
-Valt je onderwerp onder één van de typische soorten bachelorproeven die besproken zijn in de lessen Research Methods (bv.\ vergelijkende studie of risico-analyse)? Zorg er dan ook voor dat we duidelijk de verschillende stappen terug vinden die we verwachten in dit soort onderzoek!
 
-Vermijd onderzoekstechnieken die geen objectieve, meetbare resultaten kunnen opleveren. Enquêtes, bijvoorbeeld, zijn voor een bachelorproef informatica meestal \textbf{niet geschikt}. De antwoorden zijn eerder meningen dan feiten en in de praktijk blijkt het ook bijzonder moeilijk om voldoende respondenten te vinden. Studenten die een enquête willen voeren, hebben meestal ook geen goede definitie van de populatie, waardoor ook niet kan aangetoond worden dat eventuele resultaten representatief zijn.
+\subsection{Fase 2}
+In de volgende fase worden verschillende bestaande rootkits geselecteerd, die verder in detail worden bekeken. 
+Met deze informatie kan een plan opgesteld worden over welke methode zal worden gebruikt voor een rootkit, en te beslissen via welke manier de Linux kernel module kan ingeladen worden. In het beste scenario lukt dit zonder dat het systeem zich bewust is van de niet-legitieme aanpassing. Er moet worden uitgewerkt welke veiligheidsmechanismen omzeild kunnen worden, hoe de kernel module ingeladen kan worden en hoe deze werkt om het vereiste resultaat te bereiken. In het voorstel wordt gewerkt met één bepaalde Linux kernel en één bepaalde OS-release maar er zou ook gekeken kunnen worden of dit mogelijk is voor verschillende versies.
 
-Uit dit onderdeel moet duidelijk naar voor komen dat je bachelorproef ook technisch voldoen\-de diepgang zal bevatten. Het zou niet kloppen als een bachelorproef informatica ook door bv.\ een student marketing zou kunnen uitgevoerd worden.
+\subsection{Fase 3}
+In deze fase wordt het begrijpen en schrijven van C++ code aangeleerd. Om te beginnen met het schrijven van eigen kernel module kan begonnen worden met een eenvoudig hello world script. Dit is cruciaal om de kernels modules die onderzocht werden in fase 2 te begrijpen, en geeft de mogelijkheid om modules aan te passen naargelang het gebruik in het eigen onderzoek. Dit geeft ook de mogelijkheid om zelf een kernel module te schrijven.
 
-Je beschrijft ook al welke tools (hardware, software, diensten, \ldots) je denkt hiervoor te gebruiken of te ontwikkelen.
+\subsection{Fase 4}
+Dit is de fase waarin de proof of concept wordt uitgewerkt. Hierbij worden alle informatie van voorgaande fases samengenomen om een werkend proof of concept te maken. Het eerste complexe deel van het proces is de kernel module inladen in het systeem zonder alarmbellen af te laten gaan. Hiervoor kunnen verschillende exploits gebruikt worden om ‘ root privilege’ te krijgen op het systeem. Hierna kan een MOK-module ingeladen worden, waardoor de kernel module als een erkende component wordt beschouwd. Het tweede complexe deel is de kernel module zelf, dit moet ervoor zorgen dat de system calls aangepast worden en het bestand verborgen blijft voor de gebruiker.
 
-Probeer ook een tijdschatting te maken. Hoe lang zal je met elke fase van je onderzoek bezig zijn en wat zijn de concrete \emph{deliverables} in elke fase?
+\subsection{Fase 5}
+Op basis van de proof of concept zal er getest worden of de aanpassing kan worden opgespoord via gerichte zoek commando’s, anti-virus programma's of andere tools. Er wordt verder onderzocht hoe de module kan worden ingeladen op een automatische manier, zonder dat er een manuele configuratie nodig is.  Dit kan wanneer de module via een USB stick of via een script wordt uitgevoerd. Tenslotte wordt in deze laatste fase ook de conclusie van het onderzoek besproken.
 
 %---------- Verwachte resultaten ----------------------------------------------
 \section{Verwacht resultaat, conclusie}%
 \label{sec:verwachte_resultaten}
 
-Hier beschrijf je welke resultaten je verwacht. Als je metingen en simulaties uitvoert, kan je hier al mock-ups maken van de grafieken samen met de verwachte conclusies. Benoem zeker al je assen en de onderdelen van de grafiek die je gaat gebruiken. Dit zorgt ervoor dat je concreet weet welk soort data je moet verzamelen en hoe je die moet meten.
-
-Wat heeft de doelgroep van je onderzoek aan het resultaat? Op welke manier zorgt jouw bachelorproef voor een meerwaarde?
-
-Hier beschrijf je wat je verwacht uit je onderzoek, met de motivatie waarom. Het is \textbf{niet} erg indien uit je onderzoek andere resultaten en conclusies vloeien dan dat je hier beschrijft: het is dan juist interessant om te onderzoeken waarom jouw hypothesen niet overeenkomen met de resultaten.
+Het eindresultaat is een script dat verschillende kwetsbaarheden gebruikt om een 
+zelfgemaakte Linux kernel module in te laden in het systeem zonder dat deze door het systeem als gevaarlijk wordt gedetecteerd. 
+De kernel module zorgt ervoor dat processen en bestanden verborgen kunnen worden voor de gebruiker en kan in een leeromgeving worden gebruikt om studenten praktische ervaring met dit soort malware te geven. De lesgever kan via een virtuele machine een omgeving opzetten waarmee studenten kunnen proberen om de rootkit te detecteren en te leren hoe deze eruit ziet in de praktijk.
 

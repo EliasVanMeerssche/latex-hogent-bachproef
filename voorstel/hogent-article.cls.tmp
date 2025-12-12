@@ -1,0 +1,28 @@
+%% -----------------------------------------------------------------------------
+%% hogent-article --- Article class to be used in the bachelor
+%%   programme of applied computer science at Ghent University of
+%%   Applied Sciences.
+%% Email: bert.vanvreckem at hogent.be
+%%
+%% This class was inspired by:
+%%
+%% - hogentreport.cls - HOGENT report/thesis class by Pieter van der Kloet
+%%   (pvdkloet at gmail.com)
+%% - cup-journal.cls - Cambridge University Press article class by Paul
+%%   Gessler (paul.gessler at overleaf.com)
+%% -----------------------------------------------------------------------------
+
+\NeedsTeXFormat{LaTeX2e}
+\def\@classname{hogent-article}
+
+@and
+  \space
+  \@nameuse{@author@\@roman\@tempcnta}
+
+@and
+  \space
+  \href{mailto:\@nameuse{@email@\@roman\@tempcnta}
+
+}{\nolinkurl{\@nameuse{@email@\@roman\@tempcnta}
+
+\@addpunct{.}
