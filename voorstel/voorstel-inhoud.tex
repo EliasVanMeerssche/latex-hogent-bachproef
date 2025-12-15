@@ -14,15 +14,18 @@
 
 \section{Inleiding}%
 \label{sec:inleiding}
-De kernel zit in het centrum van het besturingssysteem, en beheert een aantal uiterst belangrijke taken in het systeem, zoals het aansturen van geheugen, processen, hardware en software. De kernel wordt ook als eerste gestart wanneer het besturingssysteem opstart, en vanuit de kernel wordt het hele systeem aangestuurd. Een rootkit is een soort malware die de aanvaller volledige controle geeft over het systeem, in het bijzonder wanneer ze uitgevoerd wordt op de kernel - door een kwetsbaarheid in het netwerk of de lokale computer. De kernel regelt alles waardoor de software die van de kernel gebruikt maakt op zijn beurt ook onbetrouwbaar wordt. Omdat een kernel toolkit zo diep in het besturingssysteem zit, is het zeer moeilijk om deze te detecteren. 
+De kernel zit in het centrum van het besturingssysteem, en beheert een aantal uiterst belangrijke taken in het systeem, zoals het aansturen van geheugen, processen, hardware en software. De kernel wordt ook als eerste gestart wanneer het besturingssysteem opstart, en vanuit de kernel wordt het hele systeem aangestuurd. Een rootkit is een soort malware die de aanvaller volledige controle geeft over het systeem, in het bijzonder wanneer ze uitgevoerd wordt op de kernel - door een kwetsbaarheid in het netwerk of de lokale computer. De kernel regelt alles waardoor de software die van de kernel gebruikt maakt op zijn beurt ook onbetrouwbaar wordt. Omdat een kernel roolkit zo diep in het besturingssysteem zit, is het zeer moeilijk om deze te detecteren. 
 
 Het is niet eenvoudig om corruptie van een kernel te demonstreren tijdens de les Cybersecurity in de hogeschool opleiding Toegepaste Informatica. De lesgever, meneer Clauwaert, wil dat studenten die zich verdiepen in cybersecurity aanleren hoe ze een aangetast systeem kunnen herkennen en de schade van een rootkit kunnen beperken. Om dit mogelijk te maken moet er een kernel module worden geschreven die als doel heeft om een bestand of een proces te verbergen in het besturingssysteem. Dit moet gebeuren zodat de gebruiker op geen enkele manier op de hoogte is van het bestand of proces.
 De lesgever heeft voor één bepaalde versie van een linux distributie een kernel rootkit nodig die kan worden gebruikt tijdens een lab oefening of een troubleshooting test. Het verborgen bestand of proces zal door de studenten gevonden moeten worden tijdens de oefening.
 
 Het doel van de bachelorproef is om de kernel module correct te implementeren, te compileren en succesvol in te laden in het systeem.
+
+Om een betere idee te krijgen over hoe de beveiliging werkt op Linux, zullen er enkele deelvragen beantwoord worden.
+
 \begin{itemize}
-    \item Welke beveiligingsmechanismen hanteert het Linux-besturingssysteem om de kernel te beschermen tegen ongeautoriseerde aanpassingen?
-    \item Welke soorten rootkits en injectiemethodes bestaan er reeds en hoe worden deze geclassificeerd?
+    \item Welke beveiligingsmechanismen gebruikt het Linux-besturingssysteem om de kernel te beschermen tegen ongeautoriseerde aanpassingen?
+    \item Welke soorten rootkits en injectiemethodes bestaan er reeds en hoe worden deze opgedeelt?
     \item Hoe is de 'Secure Boot chain' opgebouwd en waar liggen de kwetsbaarheden die door rootkits kunnen worden uitgebuit?
 \end{itemize} 
 
@@ -55,21 +58,23 @@ Tenslotte zorgt KPTI (Kernel Page-Table Isolation) ervoor dat de Page Tables ver
 \label{sec:methodologie}
 
 \subsection{Fase 1 Literatuurstudie}
-Tijdens de eerste fase wordt een literatuurstudie opgesteld. Er wordt gekeken naar gedetailleerde publicaties over Linux beveiligingsmechanismen en de verschillende methodes waarop deze mechanismen kunnen worden omzeild. Bronnen over dit onderwerp zijn moeilijk te vinden vanwege het risico dat het vrijgeven van de broncode met zich meebrengt. Deze fase wordt ook gebuikt om kennis over kernel toolkits te verzamelen en expertise op te bouwen. Het is belangrijk om zo veel mogelijk bronnen te vinden over de actuele staat van rootkits en hoe aanvallers hier gebruik van maken. Naast wetenschappelijke literatuur moet er ook gekeken worden naar minder formele bronnen van informatie over het onderwerp, zoals online platformen als Github, video's over het onderwerp en blogs.  
+Tijdens de eerste fase wordt een literatuurstudie opgesteld. Er wordt gekeken naar gedetailleerde publicaties over Linux beveiligingsmechanismen en de verschillende methodes waarop deze mechanismen kunnen worden omzeild. Bronnen over dit onderwerp zijn moeilijk te vinden vanwege het risico dat het vrijgeven van de broncode met zich meebrengt. Deze fase wordt ook gebuikt om kennis over kernel roolkits te verzamelen en expertise op te bouwen. Het is belangrijk om zo veel mogelijk bronnen te vinden over de actuele staat van rootkits en hoe aanvallers hier gebruik van maken. Naast wetenschappelijke literatuur moet er ook gekeken worden naar minder formele bronnen van informatie over het onderwerp, zoals online platformen als Github, video's over het onderwerp en blogs. Voor de literatuurstudie wordt een periode van drie weken gerekend
+ 
 
 
 \subsection{Fase 2}
 In de volgende fase worden verschillende bestaande rootkits geselecteerd, die verder in detail worden bekeken. 
-Met deze informatie kan een plan opgesteld worden over welke methode zal worden gebruikt voor een rootkit, en te beslissen via welke manier de Linux kernel module kan ingeladen worden. In het beste scenario lukt dit zonder dat het systeem zich bewust is van de niet-legitieme aanpassing. Er moet worden uitgewerkt welke veiligheidsmechanismen omzeild kunnen worden, hoe de kernel module ingeladen kan worden en hoe deze werkt om het vereiste resultaat te bereiken. In het voorstel wordt gewerkt met één bepaalde Linux kernel en één bepaalde OS-release maar er zou ook gekeken kunnen worden of dit mogelijk is voor verschillende versies.
+Met deze informatie kan een plan opgesteld worden over welke methode zal worden gebruikt voor een rootkit, en te beslissen via welke manier de Linux kernel module kan ingeladen worden. In het beste scenario lukt dit zonder dat het systeem zich bewust is van de niet-legitieme aanpassing. Er moet worden uitgewerkt welke veiligheidsmechanismen omzeild kunnen worden, hoe de kernel module ingeladen kan worden en hoe deze werkt om het vereiste resultaat te bereiken. In het voorstel wordt gewerkt met één bepaalde Linux kernel en één bepaalde OS-release maar er zou ook gekeken kunnen worden of dit mogelijk is voor verschillende versies. Voor dit deel van het onderzoek wordt twee weken voorzien.
 
 \subsection{Fase 3}
-In deze fase wordt het begrijpen en schrijven van C++ code aangeleerd. Om te beginnen met het schrijven van eigen kernel module kan begonnen worden met een eenvoudig hello world script. Dit is cruciaal om de kernels modules die onderzocht werden in fase 2 te begrijpen, en geeft de mogelijkheid om modules aan te passen naargelang het gebruik in het eigen onderzoek. Dit geeft ook de mogelijkheid om zelf een kernel module te schrijven.
+In deze fase wordt het begrijpen en schrijven van C++ code aangeleerd. Om te beginnen met het schrijven van eigen kernel module kan begonnen worden met een eenvoudig hello world script. Dit is cruciaal om de kernels modules die onderzocht werden in fase 2 te begrijpen, en geeft de mogelijkheid om modules aan te passen naargelang het gebruik in het eigen onderzoek. Dit geeft ook de mogelijkheid om zelf een kernel module te schrijven. Voor deze fase wordt er drie weken gerekend.
+
 
 \subsection{Fase 4}
-Dit is de fase waarin de proof of concept wordt uitgewerkt. Hierbij worden alle informatie van voorgaande fases samengenomen om een werkend proof of concept te maken. Het eerste complexe deel van het proces is de kernel module inladen in het systeem zonder alarmbellen af te laten gaan. Hiervoor kunnen verschillende exploits gebruikt worden om ‘ root privilege’ te krijgen op het systeem. Hierna kan een MOK-module ingeladen worden, waardoor de kernel module als een erkende component wordt beschouwd. Het tweede complexe deel is de kernel module zelf, dit moet ervoor zorgen dat de system calls aangepast worden en het bestand verborgen blijft voor de gebruiker.
+Dit is de fase waarin de proof of concept wordt uitgewerkt. Hierbij worden alle informatie van voorgaande fases samengenomen om een werkend proof of concept te maken. Het eerste complexe deel van het proces is de kernel module inladen in het systeem zonder alarmbellen af te laten gaan. Hiervoor kunnen verschillende exploits gebruikt worden om ‘ root privilege’ te krijgen op het systeem. Hierna kan een MOK-module ingeladen worden, waardoor de kernel module als een erkende component wordt beschouwd. Het tweede complexe deel is de kernel module zelf, dit moet ervoor zorgen dat de system calls aangepast worden en het bestand verborgen blijft voor de gebruiker. Voor deze fase wordt er vier weken gerekend.
 
 \subsection{Fase 5}
-Op basis van de proof of concept zal er getest worden of de aanpassing kan worden opgespoord via gerichte zoek commando’s, anti-virus programma's of andere tools. Er wordt verder onderzocht hoe de module kan worden ingeladen op een automatische manier, zonder dat er een manuele configuratie nodig is.  Dit kan wanneer de module via een USB stick of via een script wordt uitgevoerd. Tenslotte wordt in deze laatste fase ook de conclusie van het onderzoek besproken.
+Op basis van de proof of concept zal er getest worden of de aanpassing kan worden opgespoord via gerichte zoek commando’s, anti-virus programma's of andere tools. Er wordt verder onderzocht hoe de module kan worden ingeladen op een automatische manier, zonder dat er een manuele configuratie nodig is.  Dit kan wanneer de module via een USB stick of via een script wordt uitgevoerd. Tenslotte wordt in deze laatste fase ook de conclusie van het onderzoek besproken. Voor deze fase wordt er twee weken gerekend.
 
 %---------- Verwachte resultaten ----------------------------------------------
 \section{Verwacht resultaat, conclusie}%
