@@ -9,7 +9,7 @@
 \documentclass{hogent-article}
 
 % Invoegen bibliografiebestand
-    \addbibresource{voorstel.bib}
+\addbibresource{voorstel.bib}
 
 % Informatie over de opleiding, het vak en soort opdracht
 \studyprogramme{Professionele bachelor toegepaste informatica}
@@ -23,7 +23,7 @@
 \academicyear{2025-2026} % TODO: pas het academiejaar aan
 
 % TODO: Werktitel
-\title{Ontwerp en implementatie van een stealth Linux Kernel Module voor educatieve doeleinden binnen het vak Cybersecurity}
+\title{Ontwerp en implementatie van een stealth Linux-kernelmodule voor educatieve doeleinden binnen het vak Cybersecurity Advanced}
 
 % TODO: Studentnaam en emailadres invullen
 \author{Elias Van Meerssche}
@@ -36,7 +36,7 @@
 % \email{yasmine.alaoui@student.hogent.be}
 
 % TODO: Geef de co-promotor op
-%\supervisor[Co-promotor]{S. Beekman (Synalco, %\href{mailto:sigrid.beekman@synalco.be}{sigrid.beekman@synalco.be})}
+\supervisor[Co-promotor]{T. Clauwaert (Thomas, \href{mailto:thomas.clauwaert@hogent.be}{thomas.clauwaert@hogent.be})}
 
 % Binnen welke specialisatierichting uit 3TI situeert dit onderzoek zich?
 % Kies uit deze lijst:
@@ -50,13 +50,16 @@
 %   zelf
 %
 \specialisation{System \& Network Administrator}
-\keywords{Scheme, World Wide Web, $\lambda$-calculus}
+\keywords{Linux-kernelmodule, Rootkit, Cybersecurity}
 
 \begin{document}
 
 \begin{abstract}
-Tijdens deze bachelorproef wordt er een kernel module ontworpen en geïmplementeerd. Deze zal gebruikt worden tijdens een praktische oefening in het vak Cybersecurity. Het verborgen bestand of proces zal door de studenten gevonden moeten worden tijdens de oefening.
-Er wordt onderzocht wat de beveiligingsmechanismen in het Linux besturingssysteem zijn, en welke methodes er bestaan om deze te omzeilen. Verschillende soorten kernel models worden bestudeerd en in een proof on concept wordt er vervolgens een kernel module  ontworpen die kan via een rootkit ingeladen kan worden en verstopt kan worden in het systeem.  
+In deze bachelorproef wordt er een kernelmodule ontworpen en geïmplementeerd. Deze zal gebruikt worden tijdens een praktische oefening in het vak Cybersecurity Advanced. Het verborgen bestand of proces zal door de studenten gevonden moeten worden tijdens de oefening.
+Er wordt onderzocht wat de beveiligingsmechanismen van het Linuxbesturingssysteem zijn, en welke methodes er bestaan om deze te omzeilen. Tijdens de lessen van Cybersecurity Advanced wordt het onderwerp van rootkits niet aangehaald. Dit is een groot gat in kennis waar de studenten geen les over krijgen. Hoe kan een functionele kernel rootkit worden geïmplementeerd als educatief instrument om studenten Toegepaste Informatica te trainen in het detecteren van kernel corruptie?
+Het onderzoek volgt een Agile-methodologie, waarbij in korte iteraties wordt gewerkt aan een Proof of Concept (PoC). Eerst wordt onderzocht hoe via exploits root-rechten verkregen kunnen worden. Daarna wordt een kernelmodule geladen voor het verbergen van processen en bestanden. Het verwachte resultaat is een virtuele machine waarin de kernelmodule is ingeladen, die zowel de module zelf als specifieke bestanden en processen verbergt.
+Het eindresultaat zal aantonen dat er nood is aan een eenvoudige toepassing van een rootkit voor studenten. Dit zorgt ervoor dat studenten op een educatieve manier complexe begrippen kunnen leren.
+
 
 \end{abstract}
 
