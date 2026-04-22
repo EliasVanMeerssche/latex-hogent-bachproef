@@ -6,46 +6,46 @@
 % bijzonder aan wat de link is met het vorige en volgende hoofdstuk.
 
 % Pas na deze inleidende paragraaf komt de eerste sectiehoofding.
+\subsection{Introductie en Basisconcepten}
+Om te begrijpen welke functies in de kernel gebruikt worden om rootkits in te laden moet er begrepen worden waarom deze is in eerste plaats in zitten. Volgens \textcite{nagy2025detecting} zijn er drie manieren om in te laden en twee manieren om de kernel module te verstoppen. Deze worden hieronder beschreven. De eerste methode is de \emph{Loadable kernel module (LKM)} die normaal gebruikt wordt voor het inladen van drivers. Drivers kunnen op deze manier eenvoudig toegevoegd worden wanneer dit nodig is tijdens het systeem aan staat. Dit zorgt er ook voor dat de kernel niet helemaal opnieuw moet gecompileerd worden om nieuwe modules in te laden. Deze methode kan ook worden gebruikt voor het inladen van rootkits. Na het inladen probeert de module zichzelf te verstoppen om detectie te voorkomen.
+De tweede methode is \emph{Return-oriented programming (ROP)}, dit kan gebeuren wanneer de aanvaller een  memory corruption vulnerability vindt. 
+De derde methode is \emph{Extended Berkeley Packet Filter (eBPF)}. Dit is een eenvoudig alternatief voor LKM's omdat het in een sandbox omgeving runt waardoor het niet een systeemcrash kan veroorzaken, in tegenstelling met LKM's. Omdat een LKM direct in de kernel draait, kan een simpele programmeerfout het geheugen van de kernel of de gebruiker corrumperen. Dit resulteert in een fatale fout dat een kernel panic wordt genoemd, wat het hele besturingssysteem laat vastlopen en een herstart vereist. Het maakt beide gebruikt van Function hooking 
+\Volgens \textcite{zacharia-mansouri-2026-NReUKT} is een LKM sterk afhankelijk van specifieke kernel versies en moet vaak opnieuw worden gecompileerd voor kleine kernel-updates, omdat interne kernel structuren per versie verschillen. eBPF is eenvoudiger om mee te werken want het maakt gebruik van \emph{CO-RE (Compile Once, Run Everywhere)}. Hierdoor kan eBPF-code één keer worden gecompileerd en dynamisch op verschillende kernel versies draaien zonder hercompilatie. 
 
-Dit hoofdstuk bevat je literatuurstudie. De inhoud gaat verder op de inleiding, maar zal het onderwerp van de bachelorproef *diepgaand* uitspitten. De bedoeling is dat de lezer na lezing van dit hoofdstuk helemaal op de hoogte is van de huidige stand van zaken (state-of-the-art) in het onderzoeksdomein. Iemand die niet vertrouwd is met het onderwerp, weet nu voldoende om de rest van het verhaal te kunnen volgen, zonder dat die er nog andere informatie moet over opzoeken \autocite{Pollefliet2011}.
+Een LKM wordt ingeladen als een traditionele module (vaak een fysiek bestand) in het besturingssysteem \autocite{Windshock2025}. eBPF-programma's worden via de bpf() systeemaanroep direct ingeladen in de eBPF virtuele machine van de kernel en bestaan daardoor niet direct als module-bestand op het bestandssysteem \textcite{Zaidenberg2024}. Dit maakt eBPF inherent heimelijker (stealthier) dan een LKM.
 
-Je verwijst bij elke bewering die je doet, vakterm die je introduceert, enz.\ naar je bronnen. In \LaTeX{} kan dat met het commando \texttt{$\backslash${textcite\{\}}} of \texttt{$\backslash${autocite\{\}}}. Als argument van het commando geef je de ``sleutel'' van een ``record'' in een bibliografische databank in het Bib\LaTeX{}-formaat (een tekstbestand). Als je expliciet naar de auteur verwijst in de zin (narratieve referentie), gebruik je \texttt{$\backslash${}textcite\{\}}. Soms is de auteursnaam niet expliciet een onderdeel van de zin, dan gebruik je \texttt{$\backslash${}autocite\{\}} (referentie tussen haakjes). Dit gebruik je bv.~bij een citaat, of om in het bijschrift van een overgenomen afbeelding, broncode, tabel, enz. te verwijzen naar de bron. In de volgende paragraaf een voorbeeld van elk.
+Een LKM heeft onbeperkte toegang en kan direct willekeurige kernelgeheugenlocaties of kernel-datastructuren (zoals de syscall table of gebruikersrechten) fysiek overschrijven. eBPF is sterk beperkt: het kan niet zomaar willekeurige functies aanroepen of kernelgeheugen fysiek overschrijven \autocite{zacharia-mansouri-2026-NReUKT}. eBPF moet altijd gebruikmaken van toegestane helper-functies (zoals bpf\_probe\_write\_ user) om indirect data of retourwaarden te manipuleren \textcite{Zaidenberg2024}.
 
-\textcite{Knuth1998} schreef een van de standaardwerken over sorteer- en zoekalgoritmen. Experten zijn het erover eens dat cloud computing een interessante opportuniteit vormen, zowel voor gebruikers als voor dienstverleners op vlak van informatietechnologie~\autocite{Creeger2009}.
+Tenslotte is \emph{Function hooking} een methode om detectie te omzeilen. Als de rootkit ingeladen is, heeft het macht over de originele functies van de kernel. Dit zorgt ervoor dat het deze functies kan overschrijven. Het kan de locatie specifieke bestanden obfusceren waardoor het detectie kan omzeilen. Er is een verschil tussen eBPF's en LKM's. \emph{Direct Kernel Object Manipulation} is een andere techniek om te verbergen dat een kwaadaardige module is ingeladen. Deze methode past de kernelgeheugen aan waardoor het de locatie van bestanden zoals de kernel module kan verwijderen \autocite{nagy2025detecting}.
 
-Let er ook op: het \texttt{cite}-commando voor de punt, dus binnen de zin. Je verwijst meteen naar een bron in de eerste zin die erop gebaseerd is, dus niet pas op het einde van een paragraaf.
+\subsection{Tracingtechnologieën in Linux}
+Volgens \textcite{zacharia-mansouri-2026-NReUKT} heeft LKM veel meer vrijheid met onbeperkte rechten over het systeem. De code in de hook kan willekeurige functies aanroepen en elk deel van het kernel- en gebruikersgeheugen direct lezen of schrijven. Dit is niet zo bij een eBPF. Hierbij is het extreem gelimiteerd wat de code mag doen binnen de hook. In plaats daarvan zijn ze strikt afhankelijk van een specifieke lijst met goedgekeurde eBPF helper-functies om acties en manipulaties uit te voeren. Omdat LKM's directe geheugentoegang hebben, hoken ze functies vaak op agressievere manieren. Een klassieke LKM-methode is bijvoorbeeld het fysiek en direct overschrijven van pointers in de \emph{syscall} table (de systeemaanroeptabel) van de kernel. In tegenstelling kan eBPF interne kernel structuren zoals de \emph{syscall} table niet rechtstreeks aanpassen. Om functies te hooken, maakt het uitsluitend gebruik van specifieke, veilig ingebouwde inhaakpunten in de kernel, zoals \emph{Kprobes}, \emph{Uprobes}, en \emph{Tracepoints}. Ook al kan een LKM ook gebruik maken van deze hooks is dit minder nuttig sinds dat het krachtigere tools kan gebruiken.
 
-\begin{figure}
-  \centering
-  \includegraphics[width=0.8\textwidth]{grail.jpg}
-  \caption[Voorbeeld figuur.]{\label{fig:grail}Voorbeeld van invoegen van een figuur. Zorg altijd voor een uitgebreid bijschrift dat de figuur volledig beschrijft zonder in de tekst te moeten gaan zoeken. Vergeet ook je bronvermelding niet!}
-\end{figure}
+Er zijn verschillende hooks, \emph{Uprobes} zijn hooks op functies in de \emph{userland}. Dit zou gebruikt kunnen worden om bepaalde gebruiker programma's functies aan te roepen en aan te passen. \emph{Kprobes} is ook een soort hook maar verschilt van Uprobes omdat het functies aanroept binnen de kernel space werken. De lijst van functies die aangeroepen kan worden staat in /proc/kallsyms \textcite{Heredia2021}. Er is wel een lijst van functies die hiervoor niet gebruikt mogen worden. Het nut van Kprobes is om mee te kijken naar wat het systeem aan het doen is. Dit is bedoeld als een debuggingtool. Er bestaan ook nog \emph{Tracepoints} maar deze zijn statisch op voorhand in de kernel gebakken door de makers.
 
-\begin{listing}
-  \begin{minted}{python}
-    import pandas as pd
-    import seaborn as sns
+Volgens \autocite{zacharia-mansouri-2026-NReUKT} is er een netwerk hook. \emph{Xpress Data Path (XDP)} biedt de mogelijkheid om eBPF-programma's uit te voeren op het laagst mogelijke punt van de netwerkstack: direct op de netwerkkaart (NIC), nog voordat de pakketten door de kernel of de firewall worden verwerkt. 
 
-    penguins = sns.load_dataset('penguins')
-    sns.relplot(data=penguins, x="flipper_length_mm", y="bill_length_mm", hue="species")
-  \end{minted}
-  \caption[Voorbeeld codefragment]{Voorbeeld van het invoegen van een codefragment.}
-\end{listing}
 
-\lipsum[7-20]
+Schrijf over ftrace
+\subsection{Offensieve Mogelijkheden: eBPF en LKM Rootkits}
+Hoewel hooks zoals Kprobes, Uprobes en Tracepoints oorspronkelijk zijn ontworpen voor debugging en monitoring en in de basis alleen read-only toegang geven tot de parameters van de gehookte functie, kunnen ze toch worden misbruikt om data aan te passen. Als een eBPF-programma hookt op een functie krijgt het het argument waarmee die originele functie is aangeroepen. Dit zijn vaak pointers naar geheugenlocaties in userland. Met dit proces krijgt de aanvaller de locatie waar de data zich precies fysiek bevindt. De functie bpf\_probe\_write\_user() wordt dan gebruikt door een bevoorrecht eBPF-programma om direct data in de virtuele geheugenruimte van de gebruiker te overschrijven \textcite{Heredia2021}. De rootkit leest de geheugenbuffer via de hook uit en gebruikt deze helper-functie vervolgens om de data op dat adres stilletjes aan te passen, zoals het manipuleren van het bestand /etc/sudoers wanneer dit in het geheugen wordt ingelezen \autocite{zacharia-mansouri-2026-NReUKT}. 
 
-\begin{table}
-  \centering
-  \begin{tabular}{lcr}
-    \toprule
-    \textbf{Kolom 1} & \textbf{Kolom 2} & \textbf{Kolom 3} \\
-    $\alpha$         & $\beta$          & $\gamma$         \\
-    \midrule
-    A                & 10.230           & a                \\
-    B                & 45.678           & b                \\
-    C                & 99.987           & c                \\
-    \bottomrule
-  \end{tabular}
-  \caption[Voorbeeld tabel]{\label{tab:example}Voorbeeld van een tabel.}
-\end{table}
+De rootkit plaatst een hook op het exit-\emph{tracepoint} van de systeemaanroep (sys\_exit\_getdents64). Het moet namelijk wachten tot de kernel daadwerkelijk klaar is met het vullen van de buffer met de bestandsinformatie.
+Zodra de buffer is gevuld, gebruikt de rootkit zijn "schrijfrechten" in de user buffer via de functie bpf\_probe\_write\_user() om in de linux\_dirent64-structuur de d\_reclen-waarde (het lengte-attribuut) van het bestand dat nét vóór het te verbergen bestand staat, te overschrijven en te vergroten \textcite{Heredia2021}.
+
+XPD kan een eBPF programma de mogelijkheid om een Command & Control op te zetten. Aanvallers gebruiken dit om te luisteren naar "magic packets". Zodra een XDP-programma zo'n commando herkent, voert het de taak uit en overschrijft het pakket direct met onschuldige data (zoals een HTTP health check). Hierdoor merken het besturingssysteem en de netwerkmonitoringstools helemaal niets van de kwaadaardige communicatie \textcite{zacharia-mansouri-2026-NReUKT}. 
+
+\subsection{Beveiliging en Beperkingen vanuit het Besturingssysteem}
+\subsection {Detectiemethoden} 
+\subsection {Praktijk en Demonstratie voor Studenten}
+
+
+
+
+
+
+
+
+
+
 
