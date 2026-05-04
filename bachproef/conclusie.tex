@@ -14,5 +14,8 @@
 % Heeft het onderzoek geleid tot nieuwe vragen die uitnodigen tot verder 
 %onderzoek?
 
-\lipsum[76-80]
+In deze bachelorproef werd gevraagt hoe veilige, representatieve en reproduceerbare een labo-omgeving ontworpen kon worden om studenten Toegepaste Informatica te trainen in de detectie en analyse van traditionele (LKM) en moderne (eBPF) Linux-kernel-rootkits. Deze vraag is beanwtoord in de vorm van meerdere .ova-bestanden waarin klassieke LKM-rootkit (Singularity) en een moderne eBPF-rootkit (bad-bpf) zitten. Om dit te bereiken moest naar de theorie van de beide technieken gekeken worden. LKM-rootkits hebben onbeperkte rechten en maken gebruik van methodes zoals ftrace en directe het geheugen overschrijven. eBPF gebruiken compleet andere methodes, het opereert vanuit een veilige virtuele machine binnen de kernel. Het maakt gebruik van Kprobes, Uprobes, en specifieke helper-functies. Daarnaast is onderzocht welke ingebouwde beveiligingen (zoals SMEP, SMAP, KASLR en Secure Boot) een rol spelen bij het installeren van deze rootkits. Tot slot is beschreven hoe systemen kunnen worden beschermd en hoe rootkits kunnen worden opgespoord met behulp van tools zoals Volatility, Falco en Tracee."
 
+Dit onderzoek zorgt ervoor dat het lastige onderwerp van rootkits nu een duidelijke labo-oefening is geworden voor het vak Cybersecurity Advanced. Eerst was het erg moeilijk om rootkits in de les te tonen, omdat ze heel diep in het systeem verborgen zitten. Dankzij het .ova-bestanden en stappenplannen kunnen studenten mee oefenen. Zo zien ze hoe een systeem overgenomen wordt, en leren ze direct hoe ze dit kunnen herstellen en voorkomen.
+
+Kritische reflectie
