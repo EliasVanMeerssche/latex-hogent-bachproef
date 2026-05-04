@@ -5,32 +5,33 @@
 \chapter{\IfLanguageName{dutch}{Inleiding}{Introduction}}%
 \label{ch:inleiding}
 
-De inleiding moet de lezer net genoeg informatie verschaffen om het onderwerp te begrijpen en in te zien waarom de onderzoeksvraag de moeite waard is om te onderzoeken. In de inleiding ga je literatuurverwijzingen beperken, zodat de tekst vlot leesbaar blijft. Je kan de inleiding verder onderverdelen in secties als dit de tekst verduidelijkt. Zaken die aan bod kunnen komen in de inleiding~\autocite{Pollefliet2011}:
+De kernel zit in het centrum van het besturingssysteem, en beheert een aantal uiterst belangrijke taken in het systeem, zoals het aansturen van geheugen, processen, hardware en software. De kernel wordt ook als eerste gestart wanneer het besturingssysteem opstart. Daarna wordt vanuit de kernel het hele systeem aangestuurd. Een rootkit is een soort malware die de aanvaller volledige controle geeft over het systeem wanneer ze uitgevoerd wordt op de kernel die via een kwetsbaarheid in het netwerk of de lokale computer gevonden werd. De kernel regelt alles waardoor de software die van de kernel gebruikmaakt op zijn beurt ook onbetrouwbaar wordt. Omdat een kernel-rootkit zo diep in het besturingssysteem zit, is het zeer moeilijk om deze te detecteren. 
 
-\begin{itemize}
-  \item context, achtergrond
-  \item afbakenen van het onderwerp
-  \item verantwoording van het onderwerp, methodologie
-  \item probleemstelling
-  \item onderzoeksdoelstelling
-  \item onderzoeksvraag
-  \item \ldots
-\end{itemize}
+Het is niet eenvoudig om corruptie van een kernel te demonstreren tijdens de les Cybersecurity Advanced in de hogeschoolopleiding Toegepaste Informatica. De lesgever, meneer Clauwaert, wil dat studenten die zich verdiepen in Cybersecurity Advanced aanleren hoe ze een aangetast systeem kunnen herkennen en de schade van een rootkit kunnen beperken. Om dit mogelijk te maken moet er een kernelmodule geselecteerd worden die als doel heeft een bestand of een proces te verbergen in het besturingssysteem. Dit moet gebeuren zodat de gebruiker op geen enkele manier op de hoogte is van het bestand of proces. De lesgever heeft een kernel-rootkit nodig die kan worden gebruikt tijdens een lab-oefening of een troubleshooting-test. Het verborgen bestand of proces zal door de studenten gevonden moeten worden tijdens de oefening. Hoe kan een functionele kernel-rootkit worden geïmplementeerd als educatief instrument om studenten Toegepaste Informatica te trainen in het detecteren van kernel-corruptie? Het doel van de bachelorproef is om de kernelmodule correct te implementeren, te compileren en succesvol in te laden in het systeem.
 
 \section{\IfLanguageName{dutch}{Probleemstelling}{Problem Statement}}%
 \label{sec:probleemstelling}
-
-Uit je probleemstelling moet duidelijk zijn dat je onderzoek een meerwaarde heeft voor een concrete doelgroep. De doelgroep moet goed gedefinieerd en afgelijnd zijn. Doelgroepen als ``bedrijven,'' ``KMO's'', systeembeheerders, enz.~zijn nog te vaag. Als je een lijstje kan maken van de personen/organisaties die een meerwaarde zullen vinden in deze bachelorproef (dit is eigenlijk je steekproefkader), dan is dat een indicatie dat de doelgroep goed gedefinieerd is. Dit kan een enkel bedrijf zijn of zelfs één persoon (je co-promotor/opdrachtgever).
+Tijdens de lessen van Cybersecurity Advanced in de hogeschoolopleiding Toegepaste Informatica krijgen studenten momenteel geen informatie over kernel-rootkits. Omdat rootkits zeer diep in het systeem zitten, is het zeer moeilijk te detecteren. Hierdoor is het moeilijk om het op een eenvoudige manier te demonstreren tijdens de les. Het doel van de bachelorproef is om een begrijpbare labo-oefening op te stellen voor de studenten om zich op een leerrijke manier te verdiepen in het onderwerp.
 
 \section{\IfLanguageName{dutch}{Onderzoeksvraag}{Research question}}%
 \label{sec:onderzoeksvraag}
 
-Wees zo concreet mogelijk bij het formuleren van je onderzoeksvraag. Een onderzoeksvraag is trouwens iets waar nog niemand op dit moment een antwoord heeft (voor zover je kan nagaan). Het opzoeken van bestaande informatie (bv. ``welke tools bestaan er voor deze toepassing?'') is dus geen onderzoeksvraag. Je kan de onderzoeksvraag verder specifiëren in deelvragen. Bv.~als je onderzoek gaat over performantiemetingen, dan 
+Om de in de probleemstelling beschreven educatieve kloof te dichten, staat in deze bachelorproef de volgende hoofdonderzoeksvraag centraal:
+
+\textbf{``Hoe kan een representatieve, veilige en reproduceerbare labo-omgeving worden ontworpen om studenten Toegepaste Informatica te trainen in de detectie en analyse van zowel traditionele (LKM) als moderne (eBPF) Linux-kernel-rootkits?''}
+
+Om een volledig en gestructureerd antwoord te kunnen formuleren op deze hoofdvraag, is deze opgesplitst in de volgende specifieke deelvragen:
+\begin{itemize}
+    \item \textbf{Theoretische basis \& technieken:} Wat zijn de fundamentele verschillen in werking, hooking-technieken (zoals System Call Hooking en ftrace) en stealth-mogelijkheden tussen klassieke Loadable Kernel Module (LKM) rootkits en moderne Extended Berkeley Packet Filter (eBPF) rootkits?
+    \item \textbf{Omgevingsconfiguratie:} Welke specifieke beveiligingsmechanismen van het Linux-besturingssysteem (zoals Secure Boot, SMEP, SMAP en KASLR) moeten in een gecontroleerde testomgeving expliciet geconfigureerd of omzeild worden om de uitvoering van ongeregistreerde, kwaadaardige kernelcode voor educatieve doeleinden mogelijk te maken?
+    \item \textbf{Detectie \& Preventie:} Welke actuele detectiemethoden (zoals geheugenanalyse, Falco of Tracee) en preventiestrategieën zijn het meest effectief en geschikt om te integreren in een labo-oefening, zodat studenten leren een gecompromitteerd systeem te identificeren en beveiligen?
+\end{itemize}
 
 \section{\IfLanguageName{dutch}{Onderzoeksdoelstelling}{Research objective}}%
 \label{sec:onderzoeksdoelstelling}
+Het verwachte resultaat van deze bachelorproef is een Proof of Concept (PoC) in de vorm van een labo-opdracht. Deze omgeving is bedoeld voor een demonstratie voor het vak Cybersecurity Advanced.
 
-Wat is het beoogde resultaat van je bachelorproef? Wat zijn de criteria voor succes? Beschrijf die zo concreet mogelijk. Gaat het bv.\ om een proof-of-concept, een prototype, een verslag met aanbevelingen, een vergelijkende studie, enz.
+Deze Proof of Concept moet implementeerbaar zijn voor de studenten, daarom moet de testomgeving geëxporteerd worden in een .ova-bestand. Dit zorgt ervoor dat de omgeving geïsoleerd staat en dat het eenvoudig is voor de studenten om te gebruiken. Het tweede doel is het werkend krijgen en demonstreren van zowel een klassieke Loadable Kernel Module (LKM) rootkit als een moderne eBPF-rootkit binnen de opgezette virtuele omgevingen. De rootkits moeten hun stealth-functies succesvol kunnen uitvoeren. Het derde doel is het vertalen van de complexe technische werken van een rootkit naar een begrijpelijke uitleg en een stappenplan voor studenten Toegepaste Informatica. Ten laatste is het belangrijk om te testen en documenteren van preventietechnieken op de testomgeving. Hier moet ook een stappenplan voor zijn.
 
 \section{\IfLanguageName{dutch}{Opzet van deze bachelorproef}{Structure of this bachelor thesis}}%
 \label{sec:opzet-bachelorproef}
