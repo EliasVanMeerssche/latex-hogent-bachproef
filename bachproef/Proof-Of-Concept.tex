@@ -1,0 +1,119 @@
+\chapter{\IfLanguageName{dutch}{Proof of Concept als leeromgeving}{Proof of Concept als leeromgeving}}%
+\label{ch:proof\-of\-concept}
+
+Dit hoofdstuk zal het setup-proces bespreken van de rootkit die gevonden is in iteratie 2 van de methodologie.
+Hierin zal getoond worden hoe de rootkit is opgezet en hoe de studenten de rootkit kunnen detecteren met volatility3.
+
+\section{Introductie}
+
+\subsection{Opzet}
+De rootkit die gekozen is tijdens het vorige hoofdstuk staat op GitHub, hierop staat ook uitgebreid uitgelegd hoe het te gebruiken.
+Tijdens het onderzoek is er een GitHub-repository opgezet waarin er 2 scripts gemaakt zijn.
+Om de volledige functionaliteit van de rootkit te kunnen tonen voor educatieve doeleinden zijn er 2 virtuele machines nodig.
+Bij de setup is het belangrijk dat de kernelversie precies hetzelfde blijft, dus staat dit vast op versie 5.15.0-179.
+Dit is belangrijk omdat de kernelversie exact hetzelfde moet zijn voor het ISF-bestand en de dump van het RAM-geheugen.
+
+\begin{minted}{bash}
+sudo apt-mark hold linux-image-5.15.0-179-generic
+sudo apt-mark hold linux-headers-5.15.0-179-generic
+sudo apt-mark hold linux-modules-5.15.0-179-generic
+sudo apt-mark hold linux-modules-extra-5.15.0-179-generic
+sudo apt-mark hold linux-image-generic
+sudo apt-mark hold linux-headers-generic
+\end{minted}
+
+Een eBPF-rootkit begeeft zich in het RAM-geheugen van de computer, waardoor het niet meer aanwezig is als er een reboot gebeurt.
+Dit wordt opgelost in het script door een systemd-service aan te maken die bij het opstarten van het systeem de eBPF-rootkit in het geheugen laadt.
+Dit is een manier om de rootkit toch te detecteren, maar dit is de eenvoudigste manier en geeft de studenten toch de mogelijkheid om de rootkit op te sporen als ze hun best doen.
+
+\subsection{Benodigdheden om volatility3 te gebruiken}
+Geheugenforensisch onderzoek, een methode die besproken is in het hoofdstuk 'Stand van zaken', kan gebruikt worden om een rootkit op te sporen.
+Hiervoor is volatility3 gebruikt, wat 2 verschillende onderdelen nodig heeft. Het eerste is een ISF json-bestand.
+Het is mogelijk om deze online te vinden, maar omdat er gewerkt wordt met een heel specifieke versie die niet online te vinden was, wordt https://github.com/Abyss-W4tcher/volatility3-symbols gebruikt.
+Hiervoor is dwarf2json gebruikt; hierbij is er ook een GitHub-pagina die duidelijk uitlegt hoe het gebruik ervan werkt: https://github.com/volatilityfoundation/dwarf2json.
+Het gebruik hiervan duurt lang, vooral als de VM weinig RAM-geheugen heeft.
+Om het bestand /usr/lib/debug/boot/vmlinux-5.15.0-179-generic te krijgen, moet je apt install linux-image-5.15.0-179-dbgsym installeren, wat de benodigde DWARF-symbolen bevat.
+
+\begin{minted}{bash}
+./dwarf2json linux \
+    --elf "/usr/lib/debug/boot/vmlinux-5.15.0-179-generic" \
+    --system-map "/boot/System.map-5.15.0-179-generic" \
+    > "/tmp/linux-ubuntu-focal-5.15.0-179-generic.json"
+\end{minted}
+
+Net omdat dit proces zo lang duurt, is dit al gedaan voor de studenten en moet dit bestand overgezet worden naar GitHub.
+
+\subsection{RAM-dump via LiME}
+Het tweede deel dat vereist is voor volatility3 is een geheugendump van het RAM-geheugen.
+Hiervoor wordt LiME vaak gebruikt, omdat het moeilijk is om te manipuleren gezien het via een LKM ingeladen wordt.
+Hiervan is er ook een GitHub aanwezig die eenvoudig uitlegt hoe het gebruikt wordt.
+Wanneer het onderzoek tegen de lamp loopt, zullen de studenten ook falen, omdat de rootkit {ebpfkit} blokkeert dat LKM wordt ingeladen.
+Dit doet het om zichzelf te beschermen tegen geheugenforensisch onderzoek.
+In het hoofdstuk 'Stand van zaken' is al aangehaald dat het belangrijk is dat je de besmette computer niet mag vertrouwen.
+Dit is daar een voorbeeld van. Gelukkig staat de rootkit op een virtuele omgeving en is het eenvoudig om een dump te nemen van het RAM-geheugen:
+
+\begin{minted}{bash}
+./VBoxManage list runningvms
+./VBoxManage controlvm "ebpfkit" pause
+./VBoxManage debugvm "ebpfkit" dumpvmcore --filename= C:\Users\username\Downloads\memory_dump.elf
+./VBoxManage controlvm "ebpfkit" resume
+\end{minted}
+
+\subsection{Output volatility3}
+Nu beide voorwaarden voor volatility3 compleet zijn, kan het volgende commando gebruikt worden.
+Hierbij is het belangrijk dat het ISF-bestand aanwezig is onder {volatility3-develop symbolsh linux linux-ubuntu-focal-5.15.0-179-generic.json}.
+
+\begin{minted}{bash}
+python vol.py -s "C:\Users\elias\Downloads\volatility3-develop\volatility3-develop\symbols" -f "C:\Users\elias\Downloads\volatility3-develop\volatility3-develop\memory_dump_clean.elf" linux.pstree.PsTree
+\end{minted}
+
+Het belangrijkste van de output is: \begin{verbatim} 0x8a8dd09ae600 3575 3575 1 .system-health. \end{verbatim} 
+
+\begin{minted}{bash}
+python vol.py -s "C:\Users\elias\Downloads\volatility3-develop\volatility3-develop\symbols" -f "C:\Users\elias\Downloads\volatility3-develop\volatility3-develop\memory_dump_clean.elf" linux.ebpf.EBPF
+\end{minted}
+
+\begin{verbatim}
+Volatility 3 Framework 2.28.1
+Progress:  100.00               Stacking attempts finished
+Address Name    Tag     Type
+
+0xccbb8005d000  -               e3dbd137be8d6168        BPF_PROG_TYPE_CGROUP_DEVICE
+0xccbb80065000  -               6deef7357e7b4530        BPF_PROG_TYPE_CGROUP_SKB
+0xccbb8006d000  -               6deef7357e7b4530        BPF_PROG_TYPE_CGROUP_SKB
+0xccbb80125000  -               0ecd07b7b633809f        BPF_PROG_TYPE_CGROUP_DEVICE
+0xccbb80121000  -               6deef7357e7b4530        BPF_PROG_TYPE_CGROUP_SKB
+0xccbb80123000  -               6deef7357e7b4530        BPF_PROG_TYPE_CGROUP_SKB
+0xccbb80251000  -               e3dbd137be8d6168        BPF_PROG_TYPE_CGROUP_DEVICE
+0xccbb80535000  -               c8b47a902f1cc68b        BPF_PROG_TYPE_CGROUP_DEVICE
+0xccbb80655000  -               8b9c33f36f812014        BPF_PROG_TYPE_CGROUP_DEVICE
+0xccbb80253000  -               6deef7357e7b4530        BPF_PROG_TYPE_CGROUP_SKB
+0xccbb80255000  -               6deef7357e7b4530        BPF_PROG_TYPE_CGROUP_SKB
+0xccbb80051000  kretprobe__64_s 72a675d136f86ad3        BPF_PROG_TYPE_KPROBE
+0xccbb8004f000  kprobe__64_sys_ 558728e464da7dd1        BPF_PROG_TYPE_KPROBE
+0xccbb81eb5000  _vfs_open       e571209159c34cd3        BPF_PROG_TYPE_KPROBE
+0xccbb80053000  __x64_sys_finit 8e961e4bbcad9f1e        BPF_PROG_TYPE_KPROBE
+0xccbb8013b000  kretprobe__64_s fbef67bdb241355b        BPF_PROG_TYPE_KPROBE
+0xccbb8013d000  kretprobe__64_s 8149a9c1ea8fdca5        BPF_PROG_TYPE_KPROBE
+0xccbb8013f000  kretprobe__32_c 72a675d136f86ad3        BPF_PROG_TYPE_KPROBE
+0xccbb804e7000  kprobe__64_sys_ 41b087e993a64786        BPF_PROG_TYPE_KPROBE
+0xccbb804e9000  kprobe__64_sys_ fcea3ad7c5dc4dc2        BPF_PROG_TYPE_KPROBE
+0xccbb804eb000  kretprobe__64_s 72a675d136f86ad3        BPF_PROG_TYPE_KPROBE
+0xccbb8062f000  kretprobe__64_s 72a675d136f86ad3        BPF_PROG_TYPE_KPROBE
+0xccbb81f06000  kprobe__64_sys_ 9a5517ec1956fc75        BPF_PROG_TYPE_KPROBE
+0xccbb81f10000  kprobe__64_sys_ 22f1156e32b401da        BPF_PROG_TYPE_KPROBE
+0xccbb80631000  kprobe__64_sys_ 558728e464da7dd1        BPF_PROG_TYPE_KPROBE
+0xccbb80633000  kretprobe__32_c 72a675d136f86ad3        BPF_PROG_TYPE_KPROBE
+0xccbb80647000  kretprobe__64_s 72a675d136f86ad3        BPF_PROG_TYPE_KPROBE
+0xccbb80649000  _vfs_read       2e38195ad756391a        BPF_PROG_TYPE_KPROBE
+0xccbb8064b000  kretprobe__64_s 72a675d136f86ad3        BPF_PROG_TYPE_KPROBE
+0xccbb81f1a000  _vfs_getattr    e571209159c34cd3        BPF_PROG_TYPE_KPROBE
+0xccbb80707000  kretprobe__64_s 72a675d136f86ad3        BPF_PROG_TYPE_KPROBE
+0xccbb806f2000  __x64_sys_getde 2b9a2ad203222920        BPF_PROG_TYPE_KPROBE
+0xccbb806fb000  xdp_ingress_del b489bab0c6d5985c        BPF_PROG_TYPE_XDP
+0xccbb80703000  kretprobe__64_s 5faefaeb0d1fbdec        BPF_PROG_TYPE_KPROBE
+0xccbb8322b000  egress_dispatch f7ef2bda3a4006f0        BPF_PROG_TYPE_SCHED_CLS
+0xccbb81f42000  sqlite_conn_que 13cc21da02a32f77        BPF_PROG_TYPE_KPROBE
+\end{verbatim}
+
+BPF\_PROG\_TYPE\_CGROUP\_SKB en BPF\_PROG\_TYPE\_CGROUP\_DEVICE zijn de BPF's die altijd aanwezig zijn op een systeem. De BPF\_PROG\_TYPE\_KPROBE, XDP \& SCHED\_CLS zijn afkomstig van de rootkit.
