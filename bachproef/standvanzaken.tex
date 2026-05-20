@@ -4,12 +4,14 @@
 % Tip: Begin elk hoofdstuk met een paragraaf inleiding die beschrijft hoe
 % dit hoofdstuk past binnen het geheel van de bachelorproef. Geef in het
 % bijzonder aan wat de link is met het vorige en volgende hoofdstuk.
-
+Dit hoofdstuk beantwoordt de deelvragen die gesteld zijn in de inleiding. Een groot deel van de stand van zaken gaat over de technische werking van een rootkit. Dit is belangrijk om te begrijpen waarom er in Hoofdstuk 4: Proof-of-Concept gekozen is voor een eBPF\-rookit en om te begrijpen wat er gebeurt. Veel van de concepten blijven relevant bij nieuwe varianten, daarom is het ook belangrijk om terug te kijken naar onderliggende mechanismen van het verleden. Dit onderdeel zal ook een beeld schetsen van de huidige staat van rootkits.
 % Pas na deze inleidende paragraaf komt de eerste sectiehoofding. 
-\section
+\section{Achitectuur en beveiliging van de Linux\-kernel}
+
 \subsection{Introductie en Basisconcepten}
 Om te begrijpen welke functies in de kernel gebruikt worden om rootkits in te laden moet er gekeken worden naar verschillende mogelijke aanvalsmethodes. Volgens \textcite{nagy2025detecting} zijn er drie manieren om een rootkit in te laden en twee manieren om de kernel module te verstoppen. Deze worden hieronder beschreven. De eerste methode wordt \emph{Loadable kernel module (LKM)} genoemd, deze wordt normaal gebruikt voor het inladen van drivers. Drivers kunnen op deze manier eenvoudig toegevoegd worden, zonder het systeem te herstarten. Dit zorgt er ook voor dat de kernel niet helemaal opnieuw moet gecompileerd worden om nieuwe modules in te laden. Deze methode kan ook worden gebruikt voor het inladen van rootkits. Na het inladen probeert de module zichzelf te verstoppen om detectie te voorkomen.
 De tweede methode is \emph{Return\-oriented programming (ROP)}, dit kan gebeuren wanneer de aanvaller een  memory corruption vulnerability vindt.
+
 De derde methode is \emph{Extended Berkeley Packet Filter (eBPF)}. Dit is een eenvoudig alternatief voor LKM\-rootkits omdat het in een sandbox omgeving runt waardoor het geen systeemcrash kan veroorzaken, in tegenstelling tot LKM\-rootkits. Omdat een LKM direct in de kernel draait, kan een simpele programmeerfout het geheugen van de kernel of de gebruiker corrumperen. Dit resulteert in een fatale fout die een kernel panic wordt genoemd, wat het hele besturingssysteem laat vastlopen en een herstart vereist. Ze maken beide gebruik van \emph{Function hooking}.
 Volgens \textcite{zacharia-mansouri-2026-NReUKT} is een LKM sterk afhankelijk van specifieke kernel versies en moet vaak opnieuw worden gecompileerd voor kleine kernel\-updates, omdat interne kernel structuren per versie verschillen. eBPF is eenvoudiger om mee te werken want het maakt gebruik van \emph{CO\-RE (Compile Once, Run Everywhere)}. Hierdoor kan eBPF\-code één keer worden gecompileerd en dynamisch op verschillende kernel versies draaien zonder hercompilatie. 
 
