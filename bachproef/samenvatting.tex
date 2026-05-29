@@ -45,4 +45,14 @@
 
 \chapter*{\IfLanguageName{dutch}{Samenvatting}{Abstract}}
 
-\lipsum[1-4]
+Rootkits zijn een gevaarlijke soort malware die zich diep in de kernel van een besturingssysteem nestelen. Omdat ze op dit niveau draaien, hebben ze volledige controle over de computer en kunnen ze zichzelf, processen en bestanden onzichtbaar maken voor de gebruiker. Dit maakt ze erg moeilijk te detecteren. Binnen de opleiding Toegepaste Informatica aan HOGENT, specifiek voor het vak Cybersecurity Advanced, was er behoefte aan een praktische manier om studenten te leren hoe deze rootkits werken en hoe ze ontdekt kunnen worden. Tot nu toe bleef dit onderwerp vooral theoretisch omdat het opzetten van een veilige en werkende demo-omgeving erg complex is.
+
+Het doel van deze bachelorproef is om een veilige en reproduceerbare labo-omgeving te ontwerpen waarin studenten zelf aan de slag kunnen met het opsporen van rootkits. Hiervoor is gekeken naar twee verschillende soorten technieken: de traditionele Loadable Kernel Modules (LKM) en de modernere Extended Berkeley Packet Filter (eBPF). 
+
+Tijdens het onderzoek is er eerst gekeken naar de theorie achter deze twee technieken en hoe ze gebruikmaken van function hooking en ftrace om systemen te manipuleren. Ook is er onderzocht hoe ingebouwde kernel-beveiligingen zoals SMEP en SMAP invloed hebben op de werking van rootkits. Vervolgens is er een testomgeving opgezet in VirtualBox met twee concrete rootkits: Singularity (een klassieke LKM-rootkit) en ebpfkit/bad-bpf (een moderne eBPF-rootkit). 
+
+De resultaten tonen aan dat het mogelijk is om beide rootkits succesvol te installeren en uit te voeren in een gecontroleerde omgeving met een specifieke kernelversie. Om de rootkits te detecteren is er gebruikgemaakt van geheugenforensisch onderzoek. Door een dump te maken van het RAM-geheugen via VirtualBox en dit te analyseren met Volatility 3, konden de verborgen processen en actieve eBPF-hooks succesvol in kaart worden gebracht. 
+
+Dit onderzoek heeft geleid tot kant-en-klare virtuele machines (.ova-bestanden) en duidelijke stappenplannen voor de studenten. Hierdoor is het moeilijke onderwerp van rootkits veranderd in een interactieve labo-oefening. Studenten leren nu niet alleen hoe een systeem gecompromitteerd raakt, maar ook hoe ze offline geheugenanalyse kunnen gebruiken om de controle over het systeem terug te krijgen.
+
+

