@@ -31,17 +31,17 @@
     \maketitle
     
     \begin{abstract}
-        De kernel bevindt zich in het centrum van het besturingssysteem en beheert uiterst belangrijke taken[cite: 1]. Een rootkit is een soort malware die een aanvaller volledige controle geeft over het systeem en zich zeer diep in de kernel verbergt, wat detectie enorm bemoeilijkt[cite: 1]. Voor het vak Cybersecurity Advanced ontbrak het aan een veilige en reproduceerbare manier om deze kernel-corruptie te demonstreren. In dit onderzoek is een educatieve labo-omgeving ontworpen met Proof of Concept (PoC) virtuele machines (.ova-bestanden) om studenten Toegepaste Informatica te trainen in de detectie van zowel traditionele LKM- als moderne eBPF-rootkits[cite: 1].
+        De kernel bevindt zich in het centrum van het besturingssysteem en beheert uiterst belangrijke taken. Een rootkit is een soort malware die een aanvaller volledige controle geeft over het systeem en zich zeer diep in de kernel verbergt, wat detectie enorm bemoeilijkt. Voor het vak Cybersecurity Advanced ontbrak het aan een veilige en reproduceerbare manier om deze kernel-corruptie te demonstreren. In dit onderzoek is een educatieve labo-omgeving ontworpen met Proof of Concept (PoC) virtuele machines (.ova-bestanden) om studenten Toegepaste Informatica te trainen in de detectie van zowel traditionele LKM- als moderne eBPF-rootkits.
     \end{abstract}
     
     \begin{multicols}{2} % This is how many columns your poster will be broken into
         
         \section{Probleemstelling \& Onderzoeksvragen}
-        Omdat rootkits zo diep in het systeem zitten, is het moeilijk om dit op een eenvoudige en veilige manier te demonstreren tijdens de les[cite: 1]. Dit onderzoek beantwoordt de volgende hoofdvraag:
+        Omdat rootkits zo diep in het systeem zitten, is het moeilijk om dit op een eenvoudige en veilige manier te demonstreren tijdens de les. Dit onderzoek beantwoordt de volgende hoofdvraag:
         
-        \textbf{"Hoe kan een representatieve, veilige en reproduceerbare labo-omgeving worden ontworpen om studenten Toegepaste Informatica te trainen in de detectie en analyse van zowel traditionele (LKM) als moderne (eBPF) Linux-kernel-rootkits?"}[cite: 1]
+        \textbf{"Hoe kan een representatieve, veilige en reproduceerbare labo-omgeving worden ontworpen om studenten Toegepaste Informatica te trainen in de detectie en analyse van zowel traditionele (LKM) als moderne (eBPF) Linux-kernel-rootkits?"}
         
-        Dit wordt ondersteund door drie deelvragen rond[cite: 1]:
+        Dit wordt ondersteund door drie deelvragen rond:
         \begin{itemize}
             \item \textbf{Theoretische basis:} Verschillen in hooking-technieken (ftrace vs. Kprobes).
             \item \textbf{Omgevingsconfiguratie:} Omzeilen van beveiligingen zoals SMEP, SMAP en KASLR.
@@ -49,13 +49,13 @@
         \end{itemize}
         
         \section{Methodologie \& Opzet}
-        Het onderzoek is opgedeeld in iteratieve fasen[cite: 1]:
+        Het onderzoek is opgedeeld in iteratieve fasen:
         \begin{enumerate}
             \item \textbf{De klassieke dreiging (LKM):} Verdieping in een Loadable Kernel Module rootkit (\texttt{Singularity}) en het isoleren hiervan in een veilige \texttt{.ova} omgeving.
             \item \textbf{De moderne dreiging (eBPF):} Analyse van een Extended Berkeley Packet Filter rootkit (\texttt{bad-bpf}). In de labo-omgeving wordt de persistente inlaadmethode gegarandeerd via een \texttt{systemd}-service (\texttt{.system-health}).
             \item \textbf{Synthese en Preventie:} Het documenteren en testen van detectiestrategieën (zoals LiME en Volatility3) om dit te vormen tot een educatief stappenplan.
         \end{enumerate}
-        Om geheugendumps succesvol te analyseren werd de kernelversie in de testomgeving vastgezet op \texttt{5.15.0-179}[cite: 1].
+        Om geheugendumps succesvol te analyseren werd de kernelversie in de testomgeving vastgezet op \texttt{5.15.0-179}.
         
         \section{Achtergrond: LKM vs eBPF}
         \begin{center}
@@ -63,20 +63,20 @@
                 \hline
                 \textbf{Kenmerk} & \textbf{LKM (Klassiek)} & \textbf{eBPF (Modern)} \\
                 \hline
-                \textbf{Inladen} & Fysiek modulebestand in besturingssysteem[cite: 1]. & Via \texttt{bpf()} systeemaanroep, in een virtuele machine[cite: 1]. \\
+                \textbf{Inladen} & Fysiek modulebestand in besturingssysteem. & Via \texttt{bpf()} systeemaanroep, in een virtuele machine. \\
                 \hline
-                \textbf{Toegang} & Onbeperkt, risico op kernel panic bij fouten[cite: 1]. & Gelimiteerd, moet helperfuncties gebruiken (bv. \texttt{bpf\_probe\_write\_user})[cite: 1]. \\
+                \textbf{Toegang} & Onbeperkt, risico op kernel panic bij fouten. & Gelimiteerd, moet helperfuncties gebruiken (bv. \texttt{bpf\_probe\_write\_user}). \\
                 \hline
-                \textbf{Hooking} & Direct overschrijven, vaak via \texttt{ftrace}[cite: 1]. & Via strikte inhaakpunten zoals Kprobes, Uprobes en Tracepoints[cite: 1]. \\
+                \textbf{Hooking} & Direct overschrijven, vaak via \texttt{ftrace}. & Via strikte inhaakpunten zoals Kprobes, Uprobes en Tracepoints. \\
                 \hline
             \end{tabular}
             \captionof{table}{Vergelijking van de offensieve technieken}
         \end{center}
         
         \section{Resultaten \& Detectie}
-        Tijdens de testfase bleek dat de eBPF-rootkit (\texttt{ebpfkit}) het inladen van LKM's blokkeert om geheugenforensisch onderzoek via tools zoals LiME tegen te gaan[cite: 1]. Om deze reden wordt een hypervisor-dump (\texttt{VBoxManage dumpvmcore}) gebruikt als betrouwbaar alternatief[cite: 1].
+        Tijdens de testfase bleek dat de eBPF-rootkit (\texttt{ebpfkit}) het inladen van LKM's blokkeert om geheugenforensisch onderzoek via tools zoals LiME tegen te gaan. Om deze reden wordt een hypervisor-dump (\texttt{VBoxManage dumpvmcore}) gebruikt als betrouwbaar alternatief.
         
-        Bij analyse met \textbf{Volatility 3} (\texttt{linux.ebpf.EBPF}) worden de kwaadaardige BPF-programma's in het geheugen zichtbaar[cite: 1]:
+        Bij analyse met \textbf{Volatility 3} (\texttt{linux.ebpf.EBPF}) worden de kwaadaardige BPF-programma's in het geheugen zichtbaar:
         
         \begin{verbatim}
             Address        Name             Tag              Type
@@ -85,15 +85,15 @@
             0xccbb8322b000 egress_dispatch  f7ef2bda3a4006f0 BPF_PROG_TYPE_SCHED_CLS
         \end{verbatim}
         
-        Hoewel het type \texttt{BPF\_PROG\_TYPE\_CGROUP\_SKB} legitiem is, toont de aanwezigheid van \texttt{KPROBE}, \texttt{XDP} en \texttt{SCHED\_CLS} de verborgen rootkit direct aan[cite: 1]. Ook commando's zoals \texttt{dmesg} en tools zoals \texttt{Falco} genereren waarschuwingen wanneer de \texttt{bpf\_probe\_write\_user} helperfunctie wordt gebruikt[cite: 1].
+        Hoewel het type \texttt{BPF\_PROG\_TYPE\_CGROUP\_SKB} legitiem is, toont de aanwezigheid van \texttt{KPROBE}, \texttt{XDP} en \texttt{SCHED\_CLS} de verborgen rootkit direct aan. Ook commando's zoals \texttt{dmesg} en tools zoals \texttt{Falco} genereren waarschuwingen wanneer de \texttt{bpf\_probe\_write\_user} helperfunctie wordt gebruikt.
         
         \section{Conclusies}
-        De primaire doelstelling is succesvol bereikt: er is een werkende Proof of Concept (PoC) opgeleverd in de vorm van \texttt{.ova}-bestanden (met de LKM rootkit \texttt{Singularity} en eBPF rootkit \texttt{bad-bpf})[cite: 1]. Hierdoor is het voorheen abstracte en lastig te doceren gevaar van rootkits vertaald naar een concrete, begrijpelijke labo-oefening. Studenten kunnen nu op een veilige manier de theorie achter kernel-corruptie oefenen en leren werken met detectietools zoals Volatility, Falco en Tracee[cite: 1].
+        De primaire doelstelling is succesvol bereikt: er is een werkende Proof of Concept (PoC) opgeleverd in de vorm van \texttt{.ova}-bestanden (met de LKM rootkit \texttt{Singularity} en eBPF rootkit \texttt{bad-bpf}). Hierdoor is het voorheen abstracte en lastig te doceren gevaar van rootkits vertaald naar een concrete, begrijpelijke labo-oefening. Studenten kunnen nu op een veilige manier de theorie achter kernel-corruptie oefenen en leren werken met detectietools zoals Volatility, Falco en Tracee.
         
         \section{Beperkingen \& Toekomstig onderzoek}
-        \textbf{Beperkingen van dit onderzoek:} Het daadwerkelijk uitbuiten van echte kwetsbaarheden (privilege escalation) is in de methodologie weggelaten om de complexiteit te verlagen en de focus op detectie te behouden[cite: 1]. Daarnaast wordt eBPF-persistentie gesimuleerd met een \texttt{systemd}-service in plaats van via geavanceerde bootkit-mechanismen[cite: 1].
+        \textbf{Beperkingen van dit onderzoek:} Het daadwerkelijk uitbuiten van echte kwetsbaarheden (privilege escalation) is in de methodologie weggelaten om de complexiteit te verlagen en de focus op detectie te behouden. Daarnaast wordt eBPF-persistentie gesimuleerd met een \texttt{systemd}-service in plaats van via geavanceerde bootkit-mechanismen.
         
-        \textbf{Suggesties voor verder onderzoek:} Het is waardevol om de geautomatiseerde besmetting via echte kwetsbaarheden verder uit te werken[cite: 1]. Daarnaast kan de impact van command \& control netwerkmanipulatie via XDP (Express Data Path) hooks grondiger geanalyseerd worden binnen de testomgeving[cite: 1].
+        \textbf{Suggesties voor verder onderzoek:} Het is waardevol om de geautomatiseerde besmetting via echte kwetsbaarheden verder uit te werken. Daarnaast kan de impact van command \& control netwerkmanipulatie via XDP (Express Data Path) hooks grondiger geanalyseerd worden binnen de testomgeving.
         
     \end{multicols}
 \end{document}
